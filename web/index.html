@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>Sector Seven :: GameFi Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --muted-text-color: #6c757d;
+            --border-color: #dee2e6;
+            --accent-color: #0d6efd;
+            --accent-hover: #0b5ed7;
+            --accent-text-color: #ffffff;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e9ecef;
+            --muted-text-color: #adb5bd;
+            --border-color: #495057;
+            --accent-color: #4dabf7;
+            --accent-hover: #74c0fc;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.2s, color 0.2s;
+            line-height: 1.6;
+        }
+        .container { max-width: 900px; margin: auto; }
+        h1, h2 { color: var(--text-color); }
+        h1 { text-align: center; margin-bottom: 30px; }
+        h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 0; font-size: 1.25rem; }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        /* Form Elements */
+        input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--accent-color);
+            color: var(--accent-text-color);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        button.secondary { background-color: var(--muted-text-color); }
+        button.secondary:hover { background-color: var(--text-color); }
+
+        /* Layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Specific Elements */
+        #wallet-address { font-family: monospace; font-size: 0.9rem; word-break: break-all; }
+        #gt-balance { font-weight: bold; font-size: 1.2rem; }
+        #wallet-status.connected { color: var(--success-color); }
+        #wallet-status.disconnected { color: var(--danger-color); }
+        pre#event-logs {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .loader {
+            border: 8px solid var(--border-color);
+            border-top: 8px solid var(--accent-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Theme Toggle Switch */
+        .theme-switch-wrapper { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 20px; }
+        .theme-switch { display: inline-block; height: 34px; position: relative; width: 60px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 26px; left: 4px; position: absolute; transition: .4s; width: 26px; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="loader-overlay" id="loader">
+        <div class="loader"></div>
+    </div>
+
+    <div class="container">
+        <div class="theme-switch-wrapper">
+            <span>Dark Mode</span>&nbsp;&nbsp;
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        
+        <h1>GameFi Control Panel</h1>
+        
+        <div class="card">
+            <h2>Wallet Info</h2>
+            <p><strong>Status:</strong> <span id="wallet-status" class="disconnected">Disconnected</span></p>
+            <p><strong>Address:</strong> <span id="wallet-address">N/A</span></p>
+            <p><strong>GT Balance:</strong> <span id="gt-balance">0</span> GT</p>
+            <button id="connect-wallet">Connect Wallet</button>
+        </div>
+
+        <div class="grid-container">
+            <div class="card">
+                <h2>1. Buy GT</h2>
+                <input type="number" id="usdt-amount" placeholder="Amount of USDT (e.g., 100)">
+                <button id="approve-usdt" class="secondary">1. Approve USDT</button>
+                <button id="buy-gt">2. Buy GT</button>
+            </div>
+            <div class="card">
+                <h2>2. Player Stake</h2>
+                <input type="text" id="stake-match-id" placeholder="Match ID to stake for">
+                <button id="approve-gt-stake" class="secondary">1. Approve GT Stake</button>
+                <button id="stake-btn">2. Stake GT</button>
+            </div>
+        </div>
+        
+        <div class="grid-container">
+            <div class="card">
+                <h2>3. Admin: Create Match</h2>
+                <input type="text" id="create-match-id" placeholder="Match ID (e.g., match-1)">
+                <input type="text" id="create-p1" placeholder="Player 1 Address">
+                <input type="text" id="create-p2" placeholder="Player 2 Address">
+                <input type="number" id="create-stake" placeholder="Stake Amount (e.g., 50 GT)">
+                <button id="create-match-btn">Create Match (API)</button>
+            </div>
+
+            <div class="card">
+                <h2>4. Admin: Submit Result</h2>
+                <input type="text" id="result-match-id" placeholder="Match ID">
+                <input type="text" id="result-winner" placeholder="Winner Address">
+                <button id="submit-result-btn">Submit Result (API)</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Event Logs</h2>
+            <pre id="event-logs">Connect your wallet to begin...</pre>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script>
+        // --- CONFIGURATION (ALREADY FILLED IN FOR YOU) ---
+        const config = {
+            USDT_ADDRESS: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            GAMETOKEN_ADDRESS: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            TOKENSTORE_ADDRESS: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+            PLAYGAME_ADDRESS: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+            API_URL: "http://localhost:3000"
+};
+        const usdtABI = [ "function approve(address spender, uint256 amount) returns (bool)", "function decimals() view returns (uint8)" ];
+        const gameTokenABI = [ "function approve(address spender, uint256 amount) returns (bool)", "function balanceOf(address account) view returns (uint256)" ];
+        const tokenStoreABI = [ "function buy(uint256 usdtAmount)" ];
+        const playGameABI = [ "function stake(bytes32 matchId)", "function matches(bytes32) view returns (address p1, address p2, uint256 stake, uint8 status, bool p1_staked, bool p2_staked, uint256 startTime, uint256 settleTime)" ];
+
+        // --- GLOBAL VARIABLES & DOM ELEMENTS ---
+        let provider, signer, userAddress;
+        let usdtContract, gameTokenContract, tokenStoreContract, playGameContract;
+        const walletStatusEl = document.getElementById('wallet-status'), walletAddressEl = document.getElementById('wallet-address');
+        const gtBalanceEl = document.getElementById('gt-balance'), eventLogsEl = document.getElementById('event-logs');
+        const connectWalletBtn = document.getElementById('connect-wallet'), loaderEl = document.getElementById('loader');
+
+        // --- UTILITY FUNCTIONS ---
+        const logEvent = (message) => {
+            console.log(message);
+            eventLogsEl.textContent = `${new Date().toLocaleTimeString()}: ${message}\n${eventLogsEl.textContent}`;
+        }
+        const showLoader = () => loaderEl.style.display = 'flex';
+        const hideLoader = () => loaderEl.style.display = 'none';
+
+        const updateBalance = async () => {
+            if (!gameTokenContract || !userAddress) return;
+            try {
+                const balance = await gameTokenContract.balanceOf(userAddress);
+                gtBalanceEl.textContent = ethers.utils.formatUnits(balance, 18);
+            } catch (error) { logEvent(`Could not fetch GT balance: ${error.message}`); }
+        }
+
+        // --- ASYNC ACTION WRAPPER ---
+        const handleAction = async (action) => {
+            if (!signer) return alert('Please connect your wallet first.');
+            showLoader();
+            try {
+                await action();
+            } catch (e) {
+                console.error(e);
+                logEvent(`Error: ${e.reason || e.data?.message || e.message}`);
+            } finally {
+                hideLoader();
+            }
+        };
+        
+        const handleApiAction = async (action) => {
+            showLoader();
+            try {
+                await action();
+            } catch (e) {
+                console.error(e);
+                logEvent(`API/Fetch Error: ${e.message}`);
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // --- MAIN CONNECTION LOGIC ---
+        connectWalletBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') return alert('MetaMask is not installed!');
+            showLoader();
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                walletStatusEl.textContent = 'Connected';
+                walletStatusEl.className = 'connected';
+                walletAddressEl.textContent = userAddress;
+                
+                usdtContract = new ethers.Contract(config.USDT_ADDRESS, usdtABI, signer);
+                gameTokenContract = new ethers.Contract(config.GAMETOKEN_ADDRESS, gameTokenABI, signer);
+                tokenStoreContract = new ethers.Contract(config.TOKENSTORE_ADDRESS, tokenStoreABI, signer);
+                playGameContract = new ethers.Contract(config.PLAYGAME_ADDRESS, playGameABI, signer);
+
+                updateBalance();
+                logEvent("Wallet connected successfully.");
+            } catch (error) {
+                console.error(error);
+                logEvent(`Error connecting wallet: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // --- BUTTON EVENT LISTENERS ---
+        document.getElementById('approve-usdt').addEventListener('click', () => handleAction(async () => {
+            const amount = document.getElementById('usdt-amount').value;
+            if (!amount) return alert('Please enter an amount.');
+            const decimals = await usdtContract.decimals();
+            const usdtAmount = ethers.utils.parseUnits(amount, decimals);
+            logEvent(`Approving TokenStore to spend ${amount} USDT...`);
+            const tx = await usdtContract.approve(config.TOKENSTORE_ADDRESS, usdtAmount);
+            await tx.wait();
+            logEvent(`USDT Approval successful!`);
+        }));
+        
+        document.getElementById('buy-gt').addEventListener('click', () => handleAction(async () => {
+            const amount = document.getElementById('usdt-amount').value;
+            if (!amount) return alert('Please enter an amount.');
+            const decimals = await usdtContract.decimals();
+            const usdtAmount = ethers.utils.parseUnits(amount, decimals);
+            logEvent(`Buying GT with ${amount} USDT...`);
+            const tx = await tokenStoreContract.buy(usdtAmount);
+            await tx.wait();
+            logEvent(`Purchase successful!`);
+            updateBalance();
+        }));
+        
+        document.getElementById('approve-gt-stake').addEventListener('click', () => handleAction(async () => {
+            const matchId = document.getElementById('stake-match-id').value;
+            if (!matchId) return alert("Please enter a match ID.");
+            const matchIdBytes32 = ethers.utils.formatBytes32String(matchId);
+            const matchData = await playGameContract.matches(matchIdBytes32);
+            if (matchData.stake.isZero()) return logEvent(`Error: Could not find match or stake is zero.`);
+            logEvent(`Approving PlayGame contract to spend ${ethers.utils.formatUnits(matchData.stake, 18)} GT...`);
+            const tx = await gameTokenContract.approve(config.PLAYGAME_ADDRESS, matchData.stake);
+            await tx.wait();
+            logEvent(`Stake approval successful!`);
+        }));
+
+        document.getElementById('stake-btn').addEventListener('click', () => handleAction(async () => {
+            const matchId = document.getElementById('stake-match-id').value;
+            if (!matchId) return alert("Please enter a match ID.");
+            const matchIdBytes32 = ethers.utils.formatBytes32String(matchId);
+            logEvent(`Staking for match ${matchId}...`);
+            const tx = await playGameContract.stake(matchIdBytes32);
+            await tx.wait();
+            logEvent(`Stake successful!`);
+            updateBalance();
+        }));
+
+        document.getElementById('create-match-btn').addEventListener('click', () => handleApiAction(async () => {
+            const [matchId, p1, p2, stake] = ['create-match-id', 'create-p1', 'create-p2', 'create-stake'].map(id => document.getElementById(id).value);
+            if (!matchId || !p1 || !p2 || !stake) return alert('Please fill all fields for creating a match.');
+            logEvent(`Sending API request to create match ${matchId}...`);
+            const response = await fetch(`${config.API_URL}/match/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchId, p1, p2, stake }) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'API request failed');
+            logEvent(`Match created via API. TX: ${result.txHash}`);
+        }));
+
+        document.getElementById('submit-result-btn').addEventListener('click', () => handleApiAction(async () => {
+            const [matchId, winner] = ['result-match-id', 'result-winner'].map(id => document.getElementById(id).value);
+            if (!matchId || !winner) return alert('Please fill all fields for submitting a result.');
+            logEvent(`Sending API request to submit result for ${matchId}...`);
+            const response = await fetch(`${config.API_URL}/match/result`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ matchId, winner }) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'API request failed');
+            logEvent(`Result submitted via API. TX: ${result.txHash}`);
+        }));
+
+        // --- THEME SWITCHER LOGIC ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme) {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'dark') themeToggle.checked = true;
+        }
+        themeToggle.addEventListener('change', () => {
+            const theme = themeToggle.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+    </script>
+</body>
+</html>
