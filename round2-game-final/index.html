@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TriX :: Tic-Tac-Toe Arena</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --muted-color: #888;
+            --accent-color-x: #00ffdd;
+            --accent-color-o: #ff007f;
+            --border-radius: 12px;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .hidden { display: none !important; }
+        #main-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 0;
+        }
+        
+        /* Panels */
+        .panel { margin-bottom: 25px; }
+        .panel p { margin: 8px 0; color: var(--muted-color); }
+        .panel strong { color: var(--text-color); font-weight: 600; }
+        #wallet-address { font-family: monospace; font-size: 0.9em; word-break: break-all; }
+        #gt-balance { color: var(--accent-color-x); font-weight: bold; }
+
+        /* Buttons & Inputs */
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        /* Game Board */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .cell {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            font-size: 3rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .cell:hover { background-color: #383838; }
+        .cell.x { color: var(--accent-color-x); }
+        .cell.o { color: var(--accent-color-o); }
+
+        /* Status Messages */
+        #game-status {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            min-height: 25px;
+        }
+        #proof {
+            text-align: center;
+            font-size: 0.8em;
+            margin-top: 20px;
+            word-wrap: break-word;
+        }
+        #proof a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <h1>TriX Arena</h1>
+
+        <!-- Panel 1: Wallet Connection -->
+        <div id="connection-panel" class="panel">
+            <p><strong>Status:</strong> <span id="wallet-status">Disconnected</span></p>
+            <p><strong>Address:</strong> <span id="wallet-address">N/A</span></p>
+            <p><strong>GT Balance:</strong> <span id="gt-balance">0</span> GT</p>
+            <button id="connect-wallet-btn">Connect Wallet</button>
+        </div>
+
+        <!-- Panel 2: Matchmaking -->
+        <div id="matchmaking-panel" class="panel hidden">
+            <h3>Find a Match</h3>
+            <input type="number" id="stake-amount" placeholder="Enter Stake Amount (GT)">
+            <button id="find-match-btn">Find Match</button>
+        </div>
+
+        <!-- Panel 3: Game -->
+        <div id="game-panel" class="panel hidden">
+            <h2 id="game-status">Loading Game...</h2>
+            <div id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            <p id="proof"></p>
+        </div>
+    </div>
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- Game Logic -->
+    <script src="game.js?v=2"></script>
+</body>
+</html>
